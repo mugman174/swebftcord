@@ -79,8 +79,7 @@ struct ContentView: View {
                         showView = false
 
                     }
-                    .frame(width: showView ? nil : 0, height: showView ? 30 : 0)
-                    .disabled(true)
+                    .frame(width: showView ? nil : 0, height: showView ? nil : 0)
 
             }
             if (!showView) {
