@@ -31,13 +31,19 @@ struct Message: Identifiable, Codable {
     var id: String
     var channelId: String
     var attachments: [Attachment]?
+    var edited: Bool = false
 
     private enum CodingKeys: String, CodingKey {
-        case author, content, id, channelId, attachments
+        case author, content, id, channelId, attachments, edited
     }
 
     init(_ dictionary: [String: Any]) throws {
         self = try JSONDecoder().decode(Message.self, from: JSONSerialization.data(withJSONObject: dictionary))
+    }
+
+    init(_ dictionary: [String: Any], edited: Bool) throws {
+        self = try JSONDecoder().decode(Message.self, from: JSONSerialization.data(withJSONObject: dictionary))
+        self.edited = edited
     }
 }
 

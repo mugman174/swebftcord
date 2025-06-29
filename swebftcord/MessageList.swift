@@ -27,26 +27,32 @@ struct MessageView: View {
                     Text(message.author.name)
                         .font(.caption)
                 }
-                Text(LocalizedStringKey(message.content))
-                    .textSelection(.enabled)
+                HStack {
+                    Text(LocalizedStringKey(message.content))
+                        .textSelection(.enabled)
+                    if message.edited {
+                        Image(systemName: "pencil")
+                    }
+                }
                 if (
                     message.attachments != nil && !message.attachments!.isEmpty
                 ) {
                     ScrollView(.horizontal) {
                         ForEach(message.attachments!) { attachment in
-                            if attachment.contentType?.starts(with: "image/") ?? false {
-                                CachedAsyncImage(url: URL(string: attachment.proxy_url)) { image in
-                                    image.resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                } placeholder: {
-                                    ProgressView()
+                            Link(destination: URL(string: attachment.url)!) {
+                                if attachment.contentType?.starts(with: "image/") ?? false {
+                                    CachedAsyncImage(url: URL(string: attachment.proxy_url)) { image in
+                                        image.resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                    } placeholder: {
+                                        ProgressView()
+                                    }
+                                    .frame(maxHeight: 128)
+                                } else {
+                                    Text(
+                                        attachment.filename
+                                    )
                                 }
-                                .frame(maxHeight: 128)
-                            } else {
-                                Link(
-                                    attachment.filename,
-                                    destination: URL(string: attachment.url)!
-                                )
                             }
                         }
                     }

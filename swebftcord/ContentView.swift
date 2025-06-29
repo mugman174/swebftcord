@@ -29,11 +29,23 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         didReceive message: WKScriptMessage
     ) {
         guard let data = message.body as? [String : Any] else {return}
-        if ((data["channelId"] as! String) != chosenChannel) {return}
-        messages
-            .append(
-                try! Message(data)
-            )
+        if ((data["channelId"] as? String) != chosenChannel) {return}
+        let msg_id = data["id"] as! String
+        switch data["type"] as! String {
+        case "MESSAGE_CREATE":
+            messages
+                .append(
+                    try! Message(data)
+                )
+        case "MESSAGE_UPDATE":
+            if let idx = messages.firstIndex(where: { $0.id == msg_id }) {
+                messages[idx] = try! Message(data, edited: true)
+            }
+        case "MESSAGE_DELETE":
+            messages.removeAll { $0.id == msg_id }
+        default:
+            return
+        }
     }
 }
 
@@ -116,8 +128,14 @@ struct ContentView: View {
                     _ = try! await runJS("""
                         Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_CREATE", (m) => {
                             if (!m.optimistic) {
-                                window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments})
+                                window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_CREATE", edited: false})
                             }
+                        })
+                        Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_UPDATE", (m) => {
+                            window.webkit.messageHandlers.onMessage.postMessage({channelId: m.message.channel_id, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_UPDATE"})
+                        })
+                        Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_DELETE", (m) => {
+                            window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, id: m.id, type: "MESSAGE_DELETE"})
                         })
                         """)
                 }
@@ -174,9 +192,9 @@ struct ContentView: View {
     func getMessages() async throws {
         print("MESSAGES")
         await goToChannel()
-        try! await Task.sleep(for: .seconds(1)) // todo: wait for CHANNEL_SELECT flux event
+        try? await Task.sleep(for: .seconds(1)) // todo: wait for CHANNEL_SELECT flux event
         let lmessages = try! await runJS(
-            "return \(store("Message")).getMessages(channel)._array.map(m=>{return {channelId: m.channel_id, author: {name: m.author.username, avatar: m.author.avatar, id: m.author.id}, content: m.content, id: m.id, attachments: m.attachments}})",
+            "return \(store("Message")).getMessages(channel)._array.map(m=>{return {channelId: m.channel_id, author: {name: m.author.username, avatar: m.author.avatar, id: m.author.id}, content: m.content, id: m.id, attachments: m.attachments, edited: Boolean(m.editedTimestamp)}})",
             ["channel": chosenChannel!]
         )
         let rmessages = (lmessages as! [[String: Any]])
