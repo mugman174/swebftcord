@@ -128,11 +128,38 @@ struct ContentView: View {
                     _ = try! await runJS("""
                         Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_CREATE", (m) => {
                             if (!m.optimistic) {
-                                window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_CREATE", edited: false})
+                                const referencedMessage = m.message.referenced_message ? {
+                                    author: {name: m.message.referenced_message.author.username, avatar: m.message.referenced_message.author.avatar, id: m.message.referenced_message.author.id}, 
+                                    content: m.message.referenced_message.content, 
+                                    id: m.message.referenced_message.id
+                                } : null;
+                                window.webkit.messageHandlers.onMessage.postMessage({
+                                    channelId: m.channelId, 
+                                    author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, 
+                                    content: m.message.content, 
+                                    id: m.message.id, 
+                                    attachments: m.attachments, 
+                                    type: "MESSAGE_CREATE", 
+                                    edited: false,
+                                    referenced_message: referencedMessage
+                                })
                             }
                         })
                         Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_UPDATE", (m) => {
-                            window.webkit.messageHandlers.onMessage.postMessage({channelId: m.message.channel_id, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_UPDATE"})
+                            const referencedMessage = m.message.referenced_message ? {
+                                author: {name: m.message.referenced_message.author.username, avatar: m.message.referenced_message.author.avatar, id: m.message.referenced_message.author.id}, 
+                                content: m.message.referenced_message.content, 
+                                id: m.message.referenced_message.id
+                            } : null;
+                            window.webkit.messageHandlers.onMessage.postMessage({
+                                channelId: m.message.channel_id, 
+                                author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, 
+                                content: m.message.content, 
+                                id: m.message.id, 
+                                attachments: m.attachments, 
+                                type: "MESSAGE_UPDATE",
+                                referenced_message: referencedMessage
+                            })
                         })
                         Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_DELETE", (m) => {
                             window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, id: m.id, type: "MESSAGE_DELETE"})
@@ -194,7 +221,24 @@ struct ContentView: View {
         await goToChannel()
         try? await Task.sleep(for: .seconds(1)) // todo: wait for CHANNEL_SELECT flux event
         let lmessages = try! await runJS(
-            "return \(store("Message")).getMessages(channel)._array.map(m=>{return {channelId: m.channel_id, author: {name: m.author.username, avatar: m.author.avatar, id: m.author.id}, content: m.content, id: m.id, attachments: m.attachments, edited: Boolean(m.editedTimestamp)}})",
+            """
+            return \(store("Message")).getMessages(channel)._array.map(m=>{
+                const referencedMessage = m.referenced_message ? {
+                    author: {name: m.referenced_message.author.username, avatar: m.referenced_message.author.avatar, id: m.referenced_message.author.id}, 
+                    content: m.referenced_message.content, 
+                    id: m.referenced_message.id
+                } : null;
+                return {
+                    channelId: m.channel_id, 
+                    author: {name: m.author.username, avatar: m.author.avatar, id: m.author.id}, 
+                    content: m.content, 
+                    id: m.id, 
+                    attachments: m.attachments, 
+                    edited: Boolean(m.editedTimestamp),
+                    referenced_message: referencedMessage
+                }
+            })
+            """,
             ["channel": chosenChannel!]
         )
         let rmessages = (lmessages as! [[String: Any]])

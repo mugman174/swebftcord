@@ -32,9 +32,10 @@ struct Message: Identifiable, Codable {
     var channelId: String
     var attachments: [Attachment]?
     var edited: Bool = false
+    var referencedMessage: ReferencedMessage?
 
     private enum CodingKeys: String, CodingKey {
-        case author, content, id, channelId, attachments, edited
+        case author, content, id, channelId, attachments, edited, referencedMessage = "referenced_message"
     }
 
     init(_ dictionary: [String: Any]) throws {
@@ -66,5 +67,15 @@ struct Attachment: Identifiable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case proxy_url, url, id, contentType = "content_type", filename
+    }
+}
+
+struct ReferencedMessage: Identifiable, Codable {
+    var author: Author
+    var content: String
+    var id: String
+
+    private enum CodingKeys: String, CodingKey {
+        case author, content, id
     }
 }

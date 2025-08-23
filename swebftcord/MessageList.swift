@@ -28,6 +28,27 @@ struct MessageView: View {
                     Text(message.author.name)
                         .font(.caption)
                 }
+                
+                // Show replied message if this is a reply
+                if let referencedMessage = message.referencedMessage {
+                    HStack {
+                        Rectangle()
+                            .fill(Color.secondary)
+                            .frame(width: 2)
+                        VStack(alignment: .leading) {
+                            Text("↪ \(referencedMessage.author.name)")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Text(referencedMessage.content)
+                                .font(.caption2)
+                                .lineLimit(1)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.leading, 4)
+                }
+                
                 HStack {
                     Text(LocalizedStringKey(message.content))
                         .textSelection(.enabled)
