@@ -11,6 +11,7 @@ import CachedAsyncImage
 
 struct MessageView: View {
     var message: Message
+    var onReply: ((Message) -> Void)?
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
@@ -59,6 +60,13 @@ struct MessageView: View {
                 }
             }
             Spacer()
+            if let onReply = onReply {
+                Button(action: { onReply(message) }) {
+                    Image(systemName: "arrowshape.turn.up.left")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
         }
     }
 }
@@ -70,13 +78,16 @@ struct MessageList: View {
     var getMessages: () async throws -> Void
     var runJS: (String, [String : Any]) async throws -> Any?
     @State var messageContent: String = ""
+    @State var replyingTo: Message? = nil
 
     var body: some View {
         VStack {
             ScrollViewReader { reader in
                 ScrollView {
                     ForEach(messages) { message in
-                        MessageView(message: message)
+                        MessageView(message: message, onReply: { replyMessage in
+                            replyingTo = replyMessage
+                        })
                             .id(message.id)
                             .padding(
                                 .init(top: 2, leading: 0, bottom: 2, trailing: 0)
@@ -95,15 +106,58 @@ struct MessageList: View {
                 try! await getMessages()
             }
             .defaultScrollAnchor(.bottom)
+            
+            // Reply preview
+            if let replyingTo = replyingTo {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("Replying to \(replyingTo.author.name)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(replyingTo.content)
+                            .font(.caption2)
+                            .lineLimit(1)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Button("Cancel") {
+                        self.replyingTo = nil
+                    }
+                    .font(.caption)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+                .padding(.horizontal)
+            }
+            
             HStack {
                 TextField("Message", text: $messageContent)
                 Button("Send") {
                     Task {
-                        _ = try! await runJS(
-                            "await Vencord.Util.sendMessage(Vencord.Util.getCurrentChannel().id, {content})",
-                            ["content": messageContent]
-                        )
+                        if let replyMessage = replyingTo {
+                            // Send reply with message reference
+                            _ = try! await runJS(
+                                """
+                                await Vencord.Util.sendMessage(Vencord.Util.getCurrentChannel().id, {
+                                    content: content,
+                                    message_reference: {
+                                        message_id: replyMessageId
+                                    }
+                                })
+                                """,
+                                ["content": messageContent, "replyMessageId": replyMessage.id]
+                            )
+                        } else {
+                            // Send normal message
+                            _ = try! await runJS(
+                                "await Vencord.Util.sendMessage(Vencord.Util.getCurrentChannel().id, {content})",
+                                ["content": messageContent]
+                            )
+                        }
                         messageContent = ""
+                        replyingTo = nil
                     }
                 }
                 .keyboardShortcut(.defaultAction)
