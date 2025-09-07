@@ -85,7 +85,7 @@ struct ContentView: View {
                         webViewStore.webView.configuration.userContentController
                             .add(mh, contentWorld: .page, name: "onMessage")
                         webViewStore.webView.load(URLRequest(url: URL(string: "https://discord.com/app")!))
-                        while !((try? await runJS("return \(store("Guild"))?.isLoaded()") as? Bool) ?? false) {
+                        while !((try? await runJS("return \(store("Guild"))?.getGuildCount() > 0") as? Bool) ?? false) {
                             try! await Task.sleep(for: .seconds(1))
                         }
                         showView = false
@@ -132,7 +132,7 @@ struct ContentView: View {
                             }
                         })
                         Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_UPDATE", (m) => {
-                            window.webkit.messageHandlers.onMessage.postMessage({channelId: m.message.channel_id, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_UPDATE"})
+                            window.webkit.messageHandlers.onMessage.postMessage({channelId: m.message.channel_id, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_UPDATE", edited: true})
                         })
                         Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_DELETE", (m) => {
                             window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, id: m.id, type: "MESSAGE_DELETE"})
