@@ -41,7 +41,7 @@ struct MessageView: View {
                         ForEach(message.attachments!) { attachment in
                             Link(destination: URL(string: attachment.url)!) {
                                 if attachment.contentType?.starts(with: "image/") ?? false {
-                                    CachedAsyncImage(url: URL(string: attachment.proxy_url)) { image in
+                                    CachedAsyncImage(url: URL(string: attachment.url)) { image in
                                         image.resizable()
                                             .aspectRatio(contentMode: .fit)
                                     } placeholder: {
@@ -61,8 +61,23 @@ struct MessageView: View {
             Spacer()
         }
     }
+
 }
 
+struct MessagesView: View {
+    @Binding var messages: [Message]
+    var runJS: (String, [String : Any]) async throws -> Any?
+
+    var body: some View {
+        ForEach(messages) { message in
+            MessageView(message: message)
+                .id(message.id)
+                .padding(
+                    .init(top: 2, leading: 0, bottom: 2, trailing: 0)
+                )
+        }
+    }
+}
 
 struct MessageList: View {
     @Binding var messages: [Message]
@@ -75,13 +90,7 @@ struct MessageList: View {
         VStack {
             ScrollViewReader { reader in
                 ScrollView {
-                    ForEach(messages) { message in
-                        MessageView(message: message)
-                            .id(message.id)
-                            .padding(
-                                .init(top: 2, leading: 0, bottom: 2, trailing: 0)
-                            )
-                    }
+                    MessagesView(messages: $messages, runJS: runJS)
                 }
                 .onReceive(Just(messages)) { _ in
                     if messages.last != nil {
@@ -97,6 +106,7 @@ struct MessageList: View {
             .defaultScrollAnchor(.bottom)
             HStack {
                 TextField("Message", text: $messageContent)
+                    .textFieldStyle(.roundedBorder)
                 Button("Send") {
                     Task {
                         _ = try! await runJS(
