@@ -197,13 +197,21 @@ struct AllTheThings: View {
                 .task {
                     if (guilds.isEmpty) {
                         _ = try! await runJS("""
+                clean = (m) => JSON.parse(JSON.stringify(m));
                 Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_CREATE", (m) => {
-                    if (!m.optimistic) {
-                        window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_CREATE", edited: false})
-                    }
+                    if (m.optimistic) {return}
+                    m.message.channelId = m.channelId;
+                    m.message.attachments = m.attachments;
+                    m.message.edited = false;
+                    m.message.type = "MESSAGE_CREATE";
+                    window.webkit.messageHandlers.onMessage.postMessage(clean(m.message))
                 })
                 Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_UPDATE", (m) => {
-                    window.webkit.messageHandlers.onMessage.postMessage({channelId: m.message.channel_id, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_UPDATE", edited: true})
+                    m.message.channelId = m.message.channel_id;
+                    m.message.attachments = m.attachments;
+                    m.message.edited = true;
+                    m.message.type = "MESSAGE_UPDATE";
+                    window.webkit.messageHandlers.onMessage.postMessage(clean(m.message))
                 })
                 Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_DELETE", (m) => {
                     window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, id: m.id, type: "MESSAGE_DELETE"})
@@ -270,7 +278,7 @@ struct AllTheThings: View {
         try? await Task.sleep(for: .seconds(1)) // todo: wait for CHANNEL_SELECT flux event
         if (chosenChannel == nil) {return}
         let lmessages = try! await runJS(
-            "return \(store("Message")).getMessages(channel)._array.map(m=>{return {channelId: m.channel_id, author: {name: m.author.username, avatar: m.author.avatar, id: m.author.id}, content: m.content, id: m.id, attachments: m.attachments, edited: Boolean(m.editedTimestamp)}})",
+            "return \(store("Message")).getMessages(channel)._array.map(i=>{i['channelId']=channel; i['edited'] = Boolean(i.editedTimestamp); return i}).map(JSON.stringify).map(JSON.parse)",
             ["channel": chosenChannel!]
         )
         let rmessages = (lmessages as! [[String: Any]])

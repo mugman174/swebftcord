@@ -24,7 +24,7 @@ struct MessageView: View {
                         }
                         .frame(width: 16, height: 16)
                     }
-                    Text(message.author.name)
+                    Text(message.author.username)
                         .font(.caption)
                 }
                 HStack {

@@ -48,12 +48,12 @@ struct Message: Identifiable, Codable {
 }
 
 struct Author: Identifiable, Codable {
-    var name: String
+    var username: String
     var avatar: String?
     var id: String
 
     private enum CodingKeys: String, CodingKey {
-        case name, avatar, id
+        case username, avatar, id
     }
 }
 
