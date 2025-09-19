@@ -49,7 +49,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
-struct ContentView: View {
+struct ContentScene: Scene {
     @StateObject var webViewStore = WebViewStore()
     @State var showView = true
     @State var guilds: [Thing] = []
@@ -57,20 +57,88 @@ struct ContentView: View {
     @State var channels: [Thing] = []
     @State var chosenChannel: String? = nil
     @State var messages: [Message] = []
+    @State var pingCountText: String = ""
+    let reg = try! Regex("\\(([0-9]+)\\)")
+
+    var body: some Scene {
+        #if false // swebftcord in the menu bar
+        MenuBarExtra() {
+            AllTheThings(
+                webViewStore: webViewStore,
+                showView: $showView,
+                guilds: $guilds,
+                chosenGuild: $chosenGuild,
+                channels: $channels,
+                chosenChannel: $chosenChannel,
+                messages: $messages,
+            )
+        } label: {
+            Image(.scor)
+            Text(pingCountText)
+        }
+        .menuBarExtraStyle(.window)
+        .defaultSize(width: 640, height: 480)
+        .onChange(of: webViewStore.webView.title) { _ in
+            if let match = (webViewStore.webView.title ?? "").firstMatch(of: reg) {
+                pingCountText = "\(match.first!.value!)"
+            } else {
+                pingCountText = ""
+            }
+        }
+        #else
+        WindowGroup {
+            AllTheThings(
+                webViewStore: webViewStore,
+                showView: $showView,
+                guilds: $guilds,
+                chosenGuild: $chosenGuild,
+                channels: $channels,
+                chosenChannel: $chosenChannel,
+                messages: $messages,
+            )
+        }
+        #endif
+    }
+}
+
+struct AllTheThings: View {
+    @StateObject var webViewStore: WebViewStore
+    @Binding var showView: Bool
+    @Binding var guilds: [Thing]
+    @Binding var chosenGuild: String?
+    @Binding var channels: [Thing]
+    @Binding var chosenChannel: String?
+    @Binding var messages: [Message]
+    @State var slider: Double = 1.0
+    @State var slider2: Double = 0.30
 
     var body: some View {
         ZStack {
             VStack {
                 if (showView) {
-                    ProgressView(value: webViewStore.estimatedProgress)
-                        .padding()
+                    HStack {
+                        ProgressView(value: webViewStore.estimatedProgress)
+                            .padding()
+                        Slider(value: $slider, in: 0.0...1.0) { v in
+                            Task {
+                                let _ = try? await runJS("document.body.style.zoom = v", ["v": slider])
+                            }
+                        }
+                        Slider(value: $slider2, in: 0.00...1.00) { v in
+                            webViewStore.webView.pageZoom = slider2
+                        }
+                    }
                 }
                 WebView(webView: webViewStore.webView)
                     .task {
+                        if (showView == false) {return}
                         await vencord()
-                        webViewStore.webView.isInspectable = true
+                        webViewStore.webView.allowsLinkPreview = true
+                        if #available(iOS 16.4, *) {
+                            webViewStore.webView.isInspectable = true
+                        }
                         let rules = """
-                    [{"trigger": {"url-filter": ".*", "resource-type": ["image", "font", "svg-document", "media", "other"]}, "action": { "type": "block"}}]
+                    [{"trigger": {"url-filter": ".*", "resource-type": ["image", "font", "svg-document", "media", "other"]}, "action": {"type": "block"}, "if-domain": ["discord.com", "*.discord.com", "cdn.discordapp.com", "media.discordapp.net"], "load-context": ["top-frame"]}]
                     """
                         let rl = try! await WKContentRuleListStore.default().compileContentRuleList(
                             forIdentifier: "Rules",
@@ -85,13 +153,16 @@ struct ContentView: View {
                         webViewStore.webView.configuration.userContentController
                             .add(mh, contentWorld: .page, name: "onMessage")
                         webViewStore.webView.load(URLRequest(url: URL(string: "https://discord.com/app")!))
+                        #if os(iOS)
+                        webViewStore.webView.pageZoom = slider2
+                        #endif
                         while !((try? await runJS("return \(store("Guild"))?.getGuildCount() > 0") as? Bool) ?? false) {
-                            try! await Task.sleep(for: .seconds(1))
+                            try? await Task.sleep(for: .seconds(1))
                         }
                         showView = false
 
                     }
-                    .frame(width: showView ? nil : 0, height: showView ? nil : 0)
+                    .frame(width: showView ? nil : 0, height: showView ? 320 : 0)
 
             }
             if (!showView) {
@@ -124,20 +195,22 @@ struct ContentView: View {
                     }
                 }
                 .task {
+                    if (guilds.isEmpty) {
+                        _ = try! await runJS("""
+                Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_CREATE", (m) => {
+                    if (!m.optimistic) {
+                        window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_CREATE", edited: false})
+                    }
+                })
+                Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_UPDATE", (m) => {
+                    window.webkit.messageHandlers.onMessage.postMessage({channelId: m.message.channel_id, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_UPDATE", edited: true})
+                })
+                Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_DELETE", (m) => {
+                    window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, id: m.id, type: "MESSAGE_DELETE"})
+                })
+                """)
+                    }
                     try! await getGuilds()
-                    _ = try! await runJS("""
-                        Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_CREATE", (m) => {
-                            if (!m.optimistic) {
-                                window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_CREATE", edited: false})
-                            }
-                        })
-                        Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_UPDATE", (m) => {
-                            window.webkit.messageHandlers.onMessage.postMessage({channelId: m.message.channel_id, author: {name: m.message.author.username, avatar: m.message.author.avatar, id: m.message.author.id}, content: m.message.content, id: m.message.id, attachments: m.attachments, type: "MESSAGE_UPDATE", edited: true})
-                        })
-                        Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_DELETE", (m) => {
-                            window.webkit.messageHandlers.onMessage.postMessage({channelId: m.channelId, id: m.id, type: "MESSAGE_DELETE"})
-                        })
-                        """)
                 }
             }
         }
@@ -183,16 +256,19 @@ struct ContentView: View {
     }
 
     func goToChannel() async {
-        _ = try! await runJS(
-            "Vencord.Webpack.Common.NavigationRouter.transitionToGuild(guildId, channelId)",
-            ["guildId": chosenGuild!, "channelId": chosenChannel!]
-        )
+        if (chosenChannel != nil) {
+            _ = try! await runJS(
+                "Vencord.Webpack.Common.NavigationRouter.transitionToGuild(guildId, channelId)",
+                ["guildId": chosenGuild!, "channelId": chosenChannel!]
+            )
+        }
     }
 
     func getMessages() async throws {
         print("MESSAGES")
         await goToChannel()
         try? await Task.sleep(for: .seconds(1)) // todo: wait for CHANNEL_SELECT flux event
+        if (chosenChannel == nil) {return}
         let lmessages = try! await runJS(
             "return \(store("Message")).getMessages(channel)._array.map(m=>{return {channelId: m.channel_id, author: {name: m.author.username, avatar: m.author.avatar, id: m.author.id}, content: m.content, id: m.id, attachments: m.attachments, edited: Boolean(m.editedTimestamp)}})",
             ["channel": chosenChannel!]

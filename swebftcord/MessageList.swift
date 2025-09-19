@@ -103,7 +103,9 @@ struct MessageList: View {
             .task {
                 try! await getMessages()
             }
+            #if os(macOS)
             .defaultScrollAnchor(.bottom)
+            #endif
             HStack {
                 TextField("Message", text: $messageContent)
                     .textFieldStyle(.roundedBorder)
