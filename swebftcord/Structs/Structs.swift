@@ -16,7 +16,9 @@ struct Thing: Identifiable, Codable {
     }
 
     init(_ dictionary: [String: Any]) throws {
-        self = try JSONDecoder().decode(Thing.self, from: JSONSerialization.data(withJSONObject: dictionary))
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        self = try decoder.decode(Thing.self, from: JSONSerialization.data(withJSONObject: dictionary))
     }
 
     init(name: String, id: String) {
@@ -25,46 +27,38 @@ struct Thing: Identifiable, Codable {
     }
 }
 
-struct Message: Identifiable, Codable {
+struct Message: Identifiable, Decodable {
     var author: Author
-    var content: String
+    var content: String?
     var id: String
     var channelId: String
     var attachments: [Attachment]?
     var edited: Bool = false
-
-    private enum CodingKeys: String, CodingKey {
-        case author, content, id, channelId, attachments, edited
-    }
+    var messageReference: MessageReference?
+    var components: [AnyComponent]?
 
     init(_ dictionary: [String: Any]) throws {
         self = try JSONDecoder().decode(Message.self, from: JSONSerialization.data(withJSONObject: dictionary))
     }
 
     init(_ dictionary: [String: Any], edited: Bool) throws {
-        self = try JSONDecoder().decode(Message.self, from: JSONSerialization.data(withJSONObject: dictionary))
+        try self.init(dictionary)
         self.edited = edited
     }
+}
+
+struct MessageReference: Codable {
+    var channelId, guildId, messageId: String?
 }
 
 struct Author: Identifiable, Codable {
     var username: String
     var avatar: String?
     var id: String
-
-    private enum CodingKeys: String, CodingKey {
-        case username, avatar, id
-    }
 }
 
-struct Attachment: Identifiable, Codable {
-    var proxy_url: String
+struct Attachment: Identifiable, Codable, Hashable {
     var url: String
-    var id: String
-    var contentType: String?
-    var filename: String
-
-    private enum CodingKeys: String, CodingKey {
-        case proxy_url, url, id, contentType = "content_type", filename
-    }
+    var id, proxyUrl, contentType, attachmentId, filename: String?
+    let height, width: Int?
 }

@@ -222,6 +222,11 @@ struct AllTheThings: View {
                 }
             }
         }
+        .toolbar {
+            Button("WebView", systemImage: "safari") {
+                showView.toggle()
+            }
+        }
 
     }
     func addUserScript(_ script: WKUserScript) {
@@ -278,7 +283,7 @@ struct AllTheThings: View {
         try? await Task.sleep(for: .seconds(1)) // todo: wait for CHANNEL_SELECT flux event
         if (chosenChannel == nil) {return}
         let lmessages = try! await runJS(
-            "return \(store("Message")).getMessages(channel)._array.map(i=>{i['channelId']=channel; i['edited'] = Boolean(i.editedTimestamp); return i}).map(JSON.stringify).map(JSON.parse)",
+            "return \(store("Message")).getMessages(channel)._array.map(i=>{i['channelId']=channel; i['edited'] = Boolean(i.editedTimestamp); i['message_reference'] = i['messageReference']; return i}).map(JSON.stringify).map(JSON.parse)",
             ["channel": chosenChannel!]
         )
         let rmessages = (lmessages as! [[String: Any]])
