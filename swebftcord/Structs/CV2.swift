@@ -11,7 +11,7 @@ struct StringId: Codable, Hashable {
         if let intValue = try? container.decode(Int.self) {
             wrappedValue = String(intValue)
         } else {
-            wrappedValue = try container.decode(String.self)
+            wrappedValue = try? container.decode(String.self)
         }
     }
 
@@ -23,7 +23,7 @@ struct StringId: Codable, Hashable {
 
 
 struct Emoji: Codable, Hashable {
-    @StringId var id: String?
+    var id: StringOrInt
     let name: String?
 }
 
@@ -75,7 +75,7 @@ struct StringSelect: InteractiveComponent {
     let customId: String?
     let options: [Self.SelectOption]
     let placeholder: String?
-    let min_values, max_values: Int?
+    let minValues, maxValues: Int?
     let required, disabled: Bool?
 
     struct SelectOption: Codable, Hashable {
@@ -87,7 +87,7 @@ struct StringSelect: InteractiveComponent {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, customId, options, placeholder, min_values, max_values, required, disabled
+        case id, customId, options, placeholder, minValues, maxValues, required, disabled
     }
 }
 
@@ -257,7 +257,7 @@ struct Container: Component {
     let type: ComponentType = .container
     @StringId var id: String?
     let components: [AnyComponent]
-    let accentColor: Int?
+    let accentColor: StringOrInt?
     let spoiler: Bool?
 
     private enum CodingKeys: String, CodingKey {

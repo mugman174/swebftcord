@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8A1435B22DDF860900695966 /* CachedAsyncImage in Frameworks */ = {isa = PBXBuildFile; productRef = 8A1435B12DDF860900695966 /* CachedAsyncImage */; };
+		8A120DCC2EA30F8E00BCB97E /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = 8A120DCB2EA30F8E00BCB97E /* Nuke */; };
+		8A120DCE2EA30F8E00BCB97E /* NukeExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 8A120DCD2EA30F8E00BCB97E /* NukeExtensions */; };
+		8A120DD02EA30F8E00BCB97E /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = 8A120DCF2EA30F8E00BCB97E /* NukeUI */; };
+		8A120DD22EA30F8E00BCB97E /* NukeVideo in Frameworks */ = {isa = PBXBuildFile; productRef = 8A120DD12EA30F8E00BCB97E /* NukeVideo */; };
 		8A9A1A602DDBE02B00DF9F09 /* WebView in Frameworks */ = {isa = PBXBuildFile; productRef = 8A9A1A5F2DDBE02B00DF9F09 /* WebView */; };
 /* End PBXBuildFile section */
 
@@ -42,8 +45,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8A120DD02EA30F8E00BCB97E /* NukeUI in Frameworks */,
+				8A120DD22EA30F8E00BCB97E /* NukeVideo in Frameworks */,
+				8A120DCC2EA30F8E00BCB97E /* Nuke in Frameworks */,
+				8A120DCE2EA30F8E00BCB97E /* NukeExtensions in Frameworks */,
 				8A9A1A602DDBE02B00DF9F09 /* WebView in Frameworks */,
-				8A1435B22DDF860900695966 /* CachedAsyncImage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,7 +94,10 @@
 			name = swebftcord;
 			packageProductDependencies = (
 				8A9A1A5F2DDBE02B00DF9F09 /* WebView */,
-				8A1435B12DDF860900695966 /* CachedAsyncImage */,
+				8A120DCB2EA30F8E00BCB97E /* Nuke */,
+				8A120DCD2EA30F8E00BCB97E /* NukeExtensions */,
+				8A120DCF2EA30F8E00BCB97E /* NukeUI */,
+				8A120DD12EA30F8E00BCB97E /* NukeVideo */,
 			);
 			productName = swebftcord;
 			productReference = 8A9A1A2E2DDBDFED00DF9F09 /* swebftcord.app */;
@@ -120,7 +129,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				8A9A1A5E2DDBE02B00DF9F09 /* XCRemoteSwiftPackageReference "SwiftUI-WebView" */,
-				8A1435B02DDF860900695966 /* XCRemoteSwiftPackageReference "swiftui-cached-async-image" */,
+				8A120DCA2EA30F8E00BCB97E /* XCRemoteSwiftPackageReference "Nuke" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8A9A1A2F2DDBDFED00DF9F09 /* Products */;
@@ -290,7 +299,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = real.goobing.swebftcord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -298,9 +307,11 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Debug;
 		};
@@ -326,7 +337,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = real.goobing.swebftcord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -334,9 +345,11 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Release;
 		};
@@ -364,12 +377,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		8A1435B02DDF860900695966 /* XCRemoteSwiftPackageReference "swiftui-cached-async-image" */ = {
+		8A120DCA2EA30F8E00BCB97E /* XCRemoteSwiftPackageReference "Nuke" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/lorenzofiamingo/swiftui-cached-async-image";
+			repositoryURL = "https://github.com/kean/Nuke";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.1.1;
+				minimumVersion = 12.8.0;
 			};
 		};
 		8A9A1A5E2DDBE02B00DF9F09 /* XCRemoteSwiftPackageReference "SwiftUI-WebView" */ = {
@@ -383,10 +396,25 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		8A1435B12DDF860900695966 /* CachedAsyncImage */ = {
+		8A120DCB2EA30F8E00BCB97E /* Nuke */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 8A1435B02DDF860900695966 /* XCRemoteSwiftPackageReference "swiftui-cached-async-image" */;
-			productName = CachedAsyncImage;
+			package = 8A120DCA2EA30F8E00BCB97E /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = Nuke;
+		};
+		8A120DCD2EA30F8E00BCB97E /* NukeExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8A120DCA2EA30F8E00BCB97E /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = NukeExtensions;
+		};
+		8A120DCF2EA30F8E00BCB97E /* NukeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8A120DCA2EA30F8E00BCB97E /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = NukeUI;
+		};
+		8A120DD12EA30F8E00BCB97E /* NukeVideo */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8A120DCA2EA30F8E00BCB97E /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = NukeVideo;
 		};
 		8A9A1A5F2DDBE02B00DF9F09 /* WebView */ = {
 			isa = XCSwiftPackageProductDependency;

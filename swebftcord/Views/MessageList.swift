@@ -7,8 +7,27 @@
 
 import SwiftUI
 import Combine
-import CachedAsyncImage
+import NukeUI
 
+struct ImageView: View {
+    let url: String?
+    let maxHeight: CGFloat
+    var body: some View {
+        LazyImage(
+            url: maybeURL(url)
+        ) { state in
+            if let image = state.image {
+                image.resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if state.error != nil {
+                Image(systemName: "exclamationmark.triangle")
+            } else {
+                ProgressView()
+            }
+        }
+        .frame(maxHeight: maxHeight)
+    }
+}
 
 
 struct AttachmentView: View {
@@ -16,15 +35,10 @@ struct AttachmentView: View {
     var body: some View {
         Link(destination: URL(string: attachment.url)!) {
             if attachment.contentType?.starts(with: "image/") ?? false {
-                AsyncImage(
-                    url: URL(string: attachment.proxyUrl ?? attachment.url)
-                ) { image in
-                    image.resizable()
-                        .aspectRatio(contentMode: .fit)
-                } placeholder: {
-                    ProgressView()
-                }
-                .frame(maxHeight: 128)
+                ImageView(
+                    url: attachment.proxyUrl ?? attachment.url,
+                    maxHeight: 128
+                )
             } else {
                 if let filename = attachment.filename {
                     Text(filename)
@@ -45,13 +59,16 @@ struct MessagesView: View {
     var runJS: (String, [String : Any]) async throws -> Any?
     let reader: ScrollViewProxy
     @Binding var scrolledTo: String
+    let chosenGuild: String?
 
     var body: some View {
         ForEach(messages) { message in
             MessageView(
                 message: message,
                 scrollReader: reader,
-                scrolledTo: $scrolledTo
+                scrolledTo: $scrolledTo,
+                chosenGuild: chosenGuild,
+                runJS: runJS,
             )
                 .id(message.id)
                 .padding(
@@ -64,6 +81,7 @@ struct MessagesView: View {
 struct MessageList: View {
     @Binding var messages: [Message]
     @Binding var chosenChannel: String?
+    let chosenGuild: String?
     var getMessages: () async throws -> Void
     var runJS: (String, [String : Any]) async throws -> Any?
     @State var messageContent: String = ""
@@ -73,31 +91,29 @@ struct MessageList: View {
         VStack {
             ScrollViewReader { reader in
                 ScrollView {
-                    MessagesView(messages: $messages, runJS: runJS, reader: reader, scrolledTo: $scrolledTo)
+                    MessagesView(messages: $messages, runJS: runJS, reader: reader, scrolledTo: $scrolledTo, chosenGuild: chosenGuild)
                 }
-                .onReceive(Just(messages)) { _ in
-                    if messages.last != nil {
-                        reader.scrollTo(messages.last!.id)
-                    }
-                }
+                .defaultScrollAnchor(.bottom)
 
             }
             .task {
+                messages = []
                 try! await getMessages()
             }
             #if os(macOS)
             .defaultScrollAnchor(.bottom)
             #endif
             HStack {
-                TextField("Meow", text: $messageContent)
+                TextField("Message", text: $messageContent)
                     .textFieldStyle(.roundedBorder)
                 Button("Send") {
+                    let mc = messageContent
+                    messageContent = ""
                     Task {
                         _ = try! await runJS(
                             "await Vencord.Util.sendMessage(Vencord.Util.getCurrentChannel().id, {content})",
-                            ["content": messageContent]
+                            ["content": mc]
                         )
-                        messageContent = ""
                     }
                 }
                 .keyboardShortcut(.defaultAction)

@@ -52,40 +52,15 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
 struct ContentScene: Scene {
     @StateObject var webViewStore = WebViewStore()
     @State var showView = true
-    @State var guilds: [Thing] = []
+    @State var guilds: [Thingy] = []
+    @State var channels: [Thingy] = []
     @State var chosenGuild: String? = nil
-    @State var channels: [Thing] = []
     @State var chosenChannel: String? = nil
     @State var messages: [Message] = []
     @State var pingCountText: String = ""
     let reg = try! Regex("\\(([0-9]+)\\)")
 
     var body: some Scene {
-        #if false // swebftcord in the menu bar
-        MenuBarExtra() {
-            AllTheThings(
-                webViewStore: webViewStore,
-                showView: $showView,
-                guilds: $guilds,
-                chosenGuild: $chosenGuild,
-                channels: $channels,
-                chosenChannel: $chosenChannel,
-                messages: $messages,
-            )
-        } label: {
-            Image(.scor)
-            Text(pingCountText)
-        }
-        .menuBarExtraStyle(.window)
-        .defaultSize(width: 640, height: 480)
-        .onChange(of: webViewStore.webView.title) { _ in
-            if let match = (webViewStore.webView.title ?? "").firstMatch(of: reg) {
-                pingCountText = "\(match.first!.value!)"
-            } else {
-                pingCountText = ""
-            }
-        }
-        #else
         WindowGroup {
             AllTheThings(
                 webViewStore: webViewStore,
@@ -97,20 +72,20 @@ struct ContentScene: Scene {
                 messages: $messages,
             )
         }
-        #endif
     }
 }
 
 struct AllTheThings: View {
     @StateObject var webViewStore: WebViewStore
     @Binding var showView: Bool
-    @Binding var guilds: [Thing]
+    @Binding var guilds: [Thingy]
     @Binding var chosenGuild: String?
-    @Binding var channels: [Thing]
+    @Binding var channels: [Thingy]
     @Binding var chosenChannel: String?
     @Binding var messages: [Message]
     @State var slider: Double = 1.0
     @State var slider2: Double = 0.30
+    @State var started: Bool = false
 
     var body: some View {
         ZStack {
@@ -128,55 +103,61 @@ struct AllTheThings: View {
                             webViewStore.webView.pageZoom = slider2
                         }
                     }
-                }
-                WebView(webView: webViewStore.webView)
-                    .task {
-                        if (showView == false) {return}
-                        await vencord()
-                        webViewStore.webView.allowsLinkPreview = true
-                        if #available(iOS 16.4, *) {
-                            webViewStore.webView.isInspectable = true
-                        }
-                        let rules = """
+
+                    WebView(webView: webViewStore.webView)
+                        .task {
+                            if started {return}
+                            if (showView == false) {return}
+                            await vencord()
+                            webViewStore.webView.allowsLinkPreview = true
+                            if #available(iOS 16.4, *) {
+                                webViewStore.webView.isInspectable = true
+                            }
+                            let rules = """
                     [{"trigger": {"url-filter": ".*", "resource-type": ["image", "font", "svg-document", "media", "other"]}, "action": {"type": "block"}, "if-domain": ["discord.com", "*.discord.com", "cdn.discordapp.com", "media.discordapp.net"], "load-context": ["top-frame"]}]
                     """
-                        let rl = try! await WKContentRuleListStore.default().compileContentRuleList(
-                            forIdentifier: "Rules",
-                            encodedContentRuleList: rules
-                        )
-                        webViewStore.webView.configuration.userContentController
-                            .add(rl!)
-                        webViewStore.webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15"
-                        let mh = MessageHandler()
-                        mh
-                            .realinit(messages: $messages, chosenChannel: $chosenChannel)
-                        webViewStore.webView.configuration.userContentController
-                            .add(mh, contentWorld: .page, name: "onMessage")
-                        webViewStore.webView.load(URLRequest(url: URL(string: "https://discord.com/app")!))
-                        #if os(iOS)
-                        webViewStore.webView.pageZoom = slider2
-                        #endif
-                        while !((try? await runJS("return \(store("Guild"))?.getGuildCount() > 0") as? Bool) ?? false) {
-                            try? await Task.sleep(for: .seconds(1))
+                            let rl = try! await WKContentRuleListStore.default().compileContentRuleList(
+                                forIdentifier: "Rules",
+                                encodedContentRuleList: rules
+                            )
+                            webViewStore.webView.configuration.userContentController
+                                .add(rl!)
+                            webViewStore.webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15"
+                            let mh = MessageHandler()
+                            mh
+                                .realinit(messages: $messages, chosenChannel: $chosenChannel)
+                            webViewStore.webView.configuration.userContentController
+                                .add(mh, contentWorld: .page, name: "onMessage")
+                            webViewStore.webView.load(URLRequest(url: URL(string: "https://discord.com/app")!))
+#if os(iOS)
+                            webViewStore.webView.pageZoom = slider2
+#endif
+                            while !((try? await runJS("return \(store("Guild"))?.getGuildCount() > 0") as? Bool) ?? false) {
+                                try? await Task.sleep(for: .seconds(1))
+                            }
+                            showView = false
+                            started = true
+
                         }
-                        showView = false
-
-                    }
-                    .frame(width: showView ? nil : 0, height: showView ? 320 : 0)
-
+                        .frame(width: showView ? nil : 0, height: showView ? 320 : 0)
+                }
             }
             if (!showView) {
                 NavigationSplitView {
-                    List($guilds, selection: $chosenGuild) { i in
-                        Text(i.name.wrappedValue)
+                    List(
+                        guilds,
+                        children: \.children,
+                        selection: $chosenGuild
+                    ) { i in
+                        Text(i.name)
                     }
                     .refreshable {
                         try! await getGuilds()
                     }
                 } content: {
                     if (chosenGuild != nil) {
-                        List($channels, selection: $chosenChannel) { i in
-                            Text(i.name.wrappedValue)
+                        List(channels, children: \.children, selection: $chosenChannel) { i in
+                            Text(i.name)
                         }
                         .task {
                             try! await getChannels(chosenGuild!)
@@ -188,6 +169,7 @@ struct AllTheThings: View {
                         MessageList(
                             messages: $messages,
                             chosenChannel: $chosenChannel,
+                            chosenGuild: chosenGuild,
                             getMessages: getMessages,
                             runJS: runJS
                         )
@@ -201,7 +183,6 @@ struct AllTheThings: View {
                 Vencord.Webpack.Common.FluxDispatcher.subscribe("MESSAGE_CREATE", (m) => {
                     if (m.optimistic) {return}
                     m.message.channelId = m.channelId;
-                    m.message.attachments = m.attachments;
                     m.message.edited = false;
                     m.message.type = "MESSAGE_CREATE";
                     window.webkit.messageHandlers.onMessage.postMessage(clean(m.message))
@@ -245,27 +226,58 @@ struct AllTheThings: View {
 
     func getGuilds() async throws {
         let lguilds = try await runJS("return Object.values(\(store("Guild")).getGuilds()).map(i=>{return {name:i.name, id:i.id}})")
-        guilds = (lguilds as! [[String: String]])
-            .map { try! .init($0)}
-            .sorted(by: { $0.name < $1.name })
+        let mguilds: [Thing] = (lguilds as! [[String: String]])
+            .map { try! .init($0) }
+        let rstructure = try await runJS("return JSON.parse(JSON.stringify(\(store("SortedGuild")).getCompatibleGuildFolders()))") as! [[String: Any]]
+        let structure: [GuildFolderData] = rstructure.map { try! .init($0) }
+        guilds.removeAll()
+        for item in structure {
+            if item.folderId == nil {
+                guilds.append(contentsOf:
+                                mguilds.filter { $0.id == item.guildIds[0] }
+                    .map { Thingy(name: $0.name, id: $0.id) }
+                )
+            } else {
+                guilds
+                    .append(
+                        .init(
+                            name: item.folderName ?? "",
+                            id: UUID().uuidString,
+                            children: item.guildIds.compactMap { i in
+                                if let h = mguilds.first(where: { $0.id == i}) {
+                                    return .init(name: h.name, id: i)
+                                }
+                                return .none
+                            }
+                        )
+                    )
+            }
+        }
         guilds.insert(.init(name: "DMs", id: "@me"), at: 0)
         guilds.insert(.init(name: "Favorites", id: "@favorites"), at: 1)
     }
 
     func getChannels(_ guildId: String) async throws {
-        let lchannels: Any?
+        let lchannels: [[String: String]]
         if (guildId == "@me") {
             lchannels = try await runJS("""
                 channels = \(store("PrivateChannelSort")).getSortedChannels()[1].map(i=>\(store("Channel")).getChannel(i.channelId));
                 return channels.map(i=>{return {name: (i.name || (i.recipients?.map(\(store("User")).getUser).map(i=>i.username).join(", ")) || i.id), id: i.id}});
-                """)
+                """) as! [[String: String]]
+            channels = lchannels.map { .init(name: $0["name"]!, id: $0["id"]!) }
         } else {
-            lchannels = try await runJS(
+            lchannels = (try await runJS(
                 "return \(store("GuildChannel")).getChannels(guildId).SELECTABLE.map(i=>i.channel).map(i=>{return {name: i.name, id: i.id}})",
                 ["guildId": guildId]
-            )
+            ) as! [[String: String]])
+            let chdata = lchannels.map { Thing(name: $0["name"]!, id: $0["id"]!) }
+            let order = try await runJS("""
+                c = Vencord.Webpack.findStore("GuildCategoryStore").getCategories(guildId)
+                b = Object.keys(c).filter(i=>i!="_categories").map(i=>{return {index: c._categories.filter(j=>j.channel.id==i)[0]?.index ?? -1, id: i, name: c._categories.filter(j=>j.channel.id==i)[0]?.channel.name, channels: c[i].map(j=>{return {id: j.channel.id, index: j.index}}).map(j=>j.id)}}).reduce((arr, j)=>arr.concat(j), []).sort((i,j)=>(i.index>j.index))
+                return b
+                """, ["guildId": guildId]) as! [[String: Any]]
+            channels = order.map { .init($0, chdata) }
         }
-        channels = (lchannels as! [[String: String]]).map { try! .init($0)}
     }
 
     func goToChannel() async {

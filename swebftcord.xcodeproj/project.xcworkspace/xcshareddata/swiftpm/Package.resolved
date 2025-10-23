@@ -1,13 +1,13 @@
 {
-  "originHash" : "dc4d48e1bb10d2bfa0716d89f9e264d60633813a188ce35eb49267a934cf24df",
+  "originHash" : "866920b49cae7c13c1e046eb1549b31392e5fa3c01e47d7a6a7d4f92086a5251",
   "pins" : [
     {
-      "identity" : "swiftui-cached-async-image",
+      "identity" : "nuke",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lorenzofiamingo/swiftui-cached-async-image",
+      "location" : "https://github.com/kean/Nuke",
       "state" : {
-        "revision" : "467a3d17479887943ab917a379e62bbaff60ac8a",
-        "version" : "2.1.1"
+        "revision" : "0ead44350d2737db384908569c012fe67c421e4d",
+        "version" : "12.8.0"
       }
     },
     {
