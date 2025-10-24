@@ -144,7 +144,8 @@ struct MessageView: View {
             } else {
                 s = "@unknown-user"
             }
-            let at = AttributedString(s, attributes: .init([.backgroundColor: Color.blue]))
+            var at = AttributedString(s)
+            at.backgroundColor = .blue
             guard let range: Range<AttributedString.Index> = .init(
                 match.range,
                 in: acontent
