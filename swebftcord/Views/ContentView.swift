@@ -151,6 +151,7 @@ struct AllTheThings: View {
                     ) { i in
                         Text(i.name)
                     }
+                    .copyable((chosenGuild != nil) ? [chosenGuild!]: [])
                     .refreshable {
                         try! await getGuilds()
                     }
@@ -159,6 +160,7 @@ struct AllTheThings: View {
                         List(channels, children: \.children, selection: $chosenChannel) { i in
                             Text(i.name)
                         }
+                        .copyable((chosenChannel != nil) ? [chosenChannel!] : [])
                         .task {
                             try! await getChannels(chosenGuild!)
                         }
