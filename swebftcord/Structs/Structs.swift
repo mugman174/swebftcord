@@ -60,6 +60,7 @@ struct Author: Identifiable, Codable {
     var username: String
     var avatar: String?
     var id: String
+    var globalName: String?
 }
 
 struct Attachment: Identifiable, Codable, Hashable {

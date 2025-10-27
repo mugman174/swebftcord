@@ -43,8 +43,18 @@ struct MessageView: View {
                         ImageView(url: avatar(message.author), maxHeight: 16)
                         .clipShape(.circle)
                     }
-                    Text(message.author.username)
-                        .font(.caption)
+                    if let dname = message.author.globalName {
+                        HStack {
+                            Text(dname)
+                                .font(.caption2)
+                            Text(" (\(message.author.username))")
+                                .font(.caption)
+                            Spacer()
+                        }
+                    } else {
+                        Text(message.author.username)
+                            .font(.caption)
+                    }
                 }
                 HStack {
                     VStack(alignment: .leading) {
