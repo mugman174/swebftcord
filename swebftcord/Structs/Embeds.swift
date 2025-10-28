@@ -63,7 +63,7 @@ struct Embed: Decodable, Hashable {
 }
 
 enum EmbedType: String, Codable {
-    case rich, image, video, gifv, article, link, pollResult
+    case rich, image, video, gifv, article, link, pollResult = "poll_result"
 }
 
 struct EmbedFooter: Codable, Hashable {
