@@ -10,6 +10,8 @@ import SwiftUI
 @main
 struct swebftcordApp: App {
     var body: some Scene {
-        ContentScene()
+        WindowGroup {
+            ContentView()
+        }
     }
 }

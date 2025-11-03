@@ -49,7 +49,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
-struct ContentScene: Scene {
+struct ContentView: View {
     @StateObject var webViewStore = WebViewStore()
     @State var showView = true
     @State var guilds: [Thingy] = []
@@ -57,32 +57,6 @@ struct ContentScene: Scene {
     @State var chosenGuild: String? = nil
     @State var chosenChannel: String? = nil
     @State var messages: [Message] = []
-    @State var pingCountText: String = ""
-    let reg = try! Regex("\\(([0-9]+)\\)")
-
-    var body: some Scene {
-        WindowGroup {
-            AllTheThings(
-                webViewStore: webViewStore,
-                showView: $showView,
-                guilds: $guilds,
-                chosenGuild: $chosenGuild,
-                channels: $channels,
-                chosenChannel: $chosenChannel,
-                messages: $messages,
-            )
-        }
-    }
-}
-
-struct AllTheThings: View {
-    @StateObject var webViewStore: WebViewStore
-    @Binding var showView: Bool
-    @Binding var guilds: [Thingy]
-    @Binding var chosenGuild: String?
-    @Binding var channels: [Thingy]
-    @Binding var chosenChannel: String?
-    @Binding var messages: [Message]
     @State var slider: Double = 1.0
     @State var slider2: Double = 0.30
     @State var started: Bool = false
