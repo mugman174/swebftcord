@@ -60,13 +60,13 @@ struct ComponentView: View {
                             case .button(let button):
                                 CV2ButtonView(button: button, buttonContext: buttonContext)
                             default:
-                                Text("COMPONENT")
+                                Text("UNKNOWN COMPONENT")
                                     .background(.red)
                             }
                         }
                     }
                 default:
-                    Text("COMPONENT")
+                    Text("UNKNOWN COMPONENT")
                         .background(.red)
                 }
             }

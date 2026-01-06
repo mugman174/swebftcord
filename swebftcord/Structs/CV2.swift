@@ -23,7 +23,7 @@ struct StringId: Codable, Hashable {
 
 
 struct Emoji: Codable, Hashable {
-    var id: StringOrInt
+    var id: StringOrInt?
     let name: String?
 }
 
