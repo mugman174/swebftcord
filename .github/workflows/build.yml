@@ -1,4 +1,4 @@
-name: Xcode - Build and Analyze
+name: Xcode - Build and Upload Artifact
 
 on:
   push:
@@ -8,12 +8,12 @@ on:
 
 jobs:
   build:
-    name: Build and analyse default scheme using xcodebuild command and then upload as an artifact
+    name: Build and analyse default scheme using xcodebuild command and upload artifact
     runs-on: macos-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set Default Scheme
         run: |
           scheme_list=$(xcodebuild -list -json | tr -d "\n")
@@ -34,7 +34,7 @@ jobs:
           zip output.zip -r swebftcord.app
           cd ..
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7
         with:
           path: output/output.zip
           archive: false
